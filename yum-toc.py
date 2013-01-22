@@ -47,7 +47,7 @@ if __name__ == '__main__':
 		yb.repos.setFailureCallback( freport )
 	yb.repos.doSetup()
 	#
-	pkgs = sorted( yb.pkgSack.returnPackages() )
+	pkgs = sorted( yb.pkgSack.returnPackages(), key = lambda p : p.name.lower() )
 	max_name = 7
 	for pkg in pkgs:
 		max_name = max( max_name, len(pkg.name) )
@@ -55,5 +55,17 @@ if __name__ == '__main__':
 	prev = None
 	for pkg in pkgs:
 		if pkg.name != prev:
-			print >>report,  fmt % (pkg.name, pkg.summary, pkg.repo.name)
+			try:
+				summary = pkg.summary.decode(
+					'utf-8', 'replace'
+				).encode(
+					'ascii', 'replace'
+				)
+			except:
+				summary = '*** TBD ***'
+			print >>report,  fmt % (
+				pkg.name,
+				summary,
+				pkg.repo.name
+			)
 			prev = pkg.name
