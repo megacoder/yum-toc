@@ -51,7 +51,7 @@ if __name__ == '__main__':
 	max_name = 7
 	for pkg in pkgs:
 		max_name = max( max_name, len(pkg.name) )
-	fmt = '%%-%ds %%s (%%s)' % max_name
+	fmt = '%%-%ds %%s   (%%s)' % max_name
 	prev = None
 	for pkg in pkgs:
 		if pkg.name != prev:
