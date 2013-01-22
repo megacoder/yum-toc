@@ -54,7 +54,7 @@ if __name__ == '__main__':
 		max_name = max( max_name, len(pkg.name) )
 		# max_repo = max( max_repo, len(pkg.repo.name) )
 	# fmt = '%%-%ds %%-%ds %%s' % (max_name, max_repo)
-	fmt = '%%-%ds %%s' % max_name
+	fmt = '%%-%ds %%s (%%s)' % max_name
 	for pkg in pkgs:
 		# print fmt % (pkg.name, pkg.repo.name, pkg.summary)
-		print >>report,  fmt % (pkg.name, pkg.summary)
+		print >>report,  fmt % (pkg.name, pkg.summary, pkg.repo.name)
