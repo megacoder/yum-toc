@@ -6,6 +6,19 @@ import	os
 import	sys
 import	optparse
 
+def	is_odd( n ):
+	n == int(n)
+	return False if ((n/2)*2) == n else True
+
+def	is_even( n ):
+	return not is_odd( n )
+
+def	make_even( n ):
+	return (n+1) if is_odd( n ) else n
+
+def	make_odd( n ):
+	return (n+1) if is_even( n ) else n
+
 if __name__ == '__main__':
 	me = os.path.basename( sys.argv[0] )
 	report = sys.stdout
@@ -13,6 +26,16 @@ if __name__ == '__main__':
 		usage="usage: %prog [options]",
 		version="%prog 1.0.0",
 		description="""Prints summary lines for all repo packages."""
+	)
+	NCOUNT=5
+	parser.add_option(
+		'-n',
+		'--line-every',
+		dest="spacing",
+		default=NCOUNT,
+		help="write marker line every COUNT lines; default is %d lines" % NCOUNT,
+		metavar="COUNT",
+		type="int"
 	)
 	parser.add_option(
 		'-o',
@@ -48,11 +71,13 @@ if __name__ == '__main__':
 	yb.repos.doSetup()
 	#
 	pkgs = sorted( yb.pkgSack.returnPackages(), key = lambda p : p.name.lower() )
-	max_name = 7
+	max_name = 6
 	for pkg in pkgs:
 		max_name = max( max_name, len(pkg.name) )
-	fmt = '%%-%ds %%s   (%%s)' % max_name
+	max_name = make_odd( max_name )
+	fmt = '%%-%ds%%s   (%%s)' % max_name
 	prev = None
+	lineno = 0
 	for pkg in pkgs:
 		if pkg.name != prev:
 			try:
@@ -63,9 +88,14 @@ if __name__ == '__main__':
 				)
 			except:
 				summary = '*** TBD ***'
+			name = pkg.name
+			if is_odd( len(name) ):
+				name += ' '
+			padding = ' .' * ((max_name - len(name)) / 2)
 			print >>report,  fmt % (
-				pkg.name,
+				name + (padding if (lineno % NCOUNT) == 0 else ''),
 				summary,
 				pkg.repo.name
 			)
 			prev = pkg.name
+			lineno += 1
