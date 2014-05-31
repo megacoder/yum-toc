@@ -93,7 +93,7 @@ if __name__ == '__main__':
 				name += ' '
 			padding = ' .' * ((max_name - len(name)) / 2)
 			print >>report,  fmt % (
-				name + (padding if (lineno % NCOUNT) == 0 else ''),
+				name + (padding if (lineno % options.spacing) == 0 else ''),
 				summary,
 				pkg.repo.name
 			)
