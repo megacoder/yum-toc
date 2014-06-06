@@ -6,18 +6,22 @@ import	os
 import	sys
 import	optparse
 
-def	is_odd( n ):
-	n == int(n)
-	return False if ((n/2)*2) == n else True
-
 def	is_even( n ):
-	return not is_odd( n )
+	n = int( n )
+	return ((n/2)*2) == n
+
+def	is_odd( n ):
+	return not is_even( n )
 
 def	make_even( n ):
-	return (n+1) if is_odd( n ) else n
+	if is_odd( n ):
+		return (n+1)
+	return n
 
 def	make_odd( n ):
-	return (n+1) if is_even( n ) else n
+	if is_even( n ):
+		return n+1
+	return n
 
 if __name__ == '__main__':
 	me = os.path.basename( sys.argv[0] )
@@ -91,9 +95,13 @@ if __name__ == '__main__':
 			name = pkg.name
 			if is_odd( len(name) ):
 				name += ' '
-			padding = ' .' * ((max_name - len(name)) / 2)
+			if (lineno % 5) == 0:
+				padding = ' .' * (
+					(max_name - len(name)) / 2
+				)
+				name += padding
 			print >>report,  fmt % (
-				name + (padding if (lineno % options.spacing) == 0 else ''),
+				name,
 				summary,
 				pkg.repo.name
 			)
