@@ -75,6 +75,10 @@ if __name__ == '__main__':
 	yb.repos.doSetup()
 	#
 	pkgs = sorted( yb.pkgSack.returnPackages(), key = lambda p : p.name.lower() )
+	for pat in [ '-debuginfo', '-devel' ]:
+		pkgs[:] = (
+			pkg for pkg in pkgs if not pkg.name.endswith( pat )
+		)
 	max_name = 6
 	for pkg in pkgs:
 		max_name = max( max_name, len(pkg.name) )
