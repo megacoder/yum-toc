@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # vim: sw=4 ts=4 noet
 
-import	yum
+import	hawkey
+import	argparse
 import	os
 import	sys
-import	optparse
 
 def	is_even( n ):
 	n = int( n )
@@ -14,45 +14,42 @@ def	is_odd( n ):
 	return not is_even( n )
 
 def	make_even( n ):
-	if is_odd( n ):
-		return (n+1)
-	return n
+	return (n+1) if is_odd( n ) else n
 
 def	make_odd( n ):
-	if is_even( n ):
-		return n+1
-	return n
+	return (n+1) if is_even( n ) else n
 
 if __name__ == '__main__':
-	me = os.path.basename( sys.argv[0] )
-	report = sys.stdout
-	parser = optparse.OptionParser(
-		usage="usage: %prog [options]",
-		version="%prog 1.0.0",
-		description="""Prints summary lines for all repo packages."""
+	me      = os.path.basename( sys.argv[0] )
+	prog    = os.path.splitext( me )[0]
+	version = '2.0.0'
+	parser  = argparse.ArgumentParser(
+		prog        = prog,
+		version     = version,
+		description = """Prints summary lines for all repo packages."""
 	)
 	NCOUNT=5
-	parser.add_option(
+	parser.add_argument(
 		'-n',
 		'--line-every',
-		dest="spacing",
-		default=NCOUNT,
-		help="write marker line every COUNT lines; default is %d lines" % NCOUNT,
-		metavar="COUNT",
-		type="int"
+		dest    = "spacing",
+		default = NCOUNT,
+		help    = 'write marker line every {0} lines'.format( NCOUNT ),
+		metavar = "COUNT",
+		type    = int
 	)
-	parser.add_option(
+	parser.add_argument(
 		'-o',
 		'--out',
-		dest="ofile",
-		help="write output to FILE",
-		metavar="FILE",
-		default=None
+		dest    = "ofile",
+		help    = "write output to FILE",
+		metavar = "FILE",
+		default = None
 	)
-	(options, args) = parser.parse_args()
-	if options.ofile is not None:
+	opts = parser.parse_args()
+	if opts.ofile:
 		try:
-			report = open( options.ofile, 'wt' )
+			sys.stdout = open( options.ofile, 'wt' )
 		except Exception, e:
 			print >>sys.stderr, "%s: cannot open '%s' for writing." % (
 				me,
@@ -60,33 +57,64 @@ if __name__ == '__main__':
 			)
 			raise e
 	#
-	yb = yum.YumBase()
-	yb.conf.cache = os.geteuid() != 0
+	sack = hawkey.Sack( make_cache_dir = True )
+	sack.enable_repo( '*' )
+	sack.load_system_repo( build_cache = True )
+	query = hawkey.Query( sack ).filter(
+#		reponame = hawkey.SYSTEM_REPO_NAME,
+		name__glob = '*'
+	)
+	pkgs = [
+		pkg for pkg in query
+	]
 	#
-	from urlgrabber.progress import TextMeter
-	sys.path.insert( 0, '/usr/share/yum-cli' )
-	import output
-	if sys.stdout.isatty():
-		yb.repos.setProgressBar( TextMeter(fo=sys.stdout) )
-		yb.repos.callback = output.CacheProgressCallback()
-		yumout = output.YumOutput()
-		freport = ( yumout.failureReport, (), {} )
-		yb.repos.setFailureCallback( freport )
-	yb.repos.doSetup()
+	line_width = os.getenv( 'COLUMNS' )
+	if not line_width:
+		line_width = 80
+	line_fmt = '{{0:{0}.{0}}}'.format( line_width )
 	#
-	pkgs = sorted( yb.pkgSack.returnPackages(), key = lambda p : p.name.lower() )
-	for pat in [ '-debuginfo', '-devel' ]:
-		pkgs[:] = (
-			pkg for pkg in pkgs if not pkg.name.endswith( pat )
+	max_name = make_odd(
+		max(
+			map(
+				len,
+				[ pkg.name for pkg in pkgs ]
+			)
 		)
-	max_name = 6
-	for pkg in pkgs:
-		max_name = max( max_name, len(pkg.name) )
-	max_name = make_odd( max_name )
-	fmt = '%%-%ds%%s   (%%s)' % max_name
-	prev = None
+	)
+	#
+	if False:
+		max_reponame = max(
+			map(
+				len,
+				[ pkg.reponame for pkg in pkgs ]
+			)
+		)
+	rpm_fmt = '{{0:{0}.{0}s}}  {{1}}'.format(
+		max_name,
+	)
+	if False:
+		for pkg in sorted( q[0:5] ):
+	#		print 'dir(pkg)={0}'.format( dir( pkg ) )
+			line = rpm_fmt.format(
+				str( pkg.name ),
+				str( pkg.reponame ),
+				str( pkg.summary )
+			)
+			print line_fmt.format( line )
+		exit( 1 )
+	#
+	if False:
+		for pat in [ '-debuginfo', '-devel' ]:
+			pkgs[:] = (
+				pkg for pkg in pkgs if not pkg.name.endswith( pat )
+			)
+	#
 	lineno = 0
-	for pkg in pkgs:
+	prev = None
+	for pkg in sorted(
+		pkgs,
+		key = lambda p : p.name.lower()
+	):
 		if pkg.name != prev:
 			try:
 				summary = pkg.summary.decode(
@@ -99,15 +127,16 @@ if __name__ == '__main__':
 			name = pkg.name
 			if is_odd( len(name) ):
 				name += ' '
-			if (lineno % 5) == 0:
+			if (lineno % opts.spacing) == 0:
 				padding = ' .' * (
 					(max_name - len(name)) / 2
 				)
 				name += padding
-			print >>report,  fmt % (
+			line = rpm_fmt.format(
 				name,
+#				pkg.reponame,
 				summary,
-				pkg.repo.name
 			)
+			print line_fmt.format( line )
 			prev = pkg.name
 			lineno += 1
