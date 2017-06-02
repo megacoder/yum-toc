@@ -49,11 +49,11 @@ if __name__ == '__main__':
 	opts = parser.parse_args()
 	if opts.ofile:
 		try:
-			sys.stdout = open( options.ofile, 'wt' )
+			sys.stdout = open( opts.ofile, 'wt' )
 		except Exception, e:
 			print >>sys.stderr, "%s: cannot open '%s' for writing." % (
 				me,
-				options.ofile
+				opts.ofile
 			)
 			raise e
 	#
