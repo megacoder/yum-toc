@@ -1,10 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # vim: sw=4 ts=4 noet
 
 import	hawkey
 import	argparse
 import	os
 import	sys
+
+try:
+	from version import Version
+except:
+	Version = '0.0.0'
 
 def	is_even( n ):
 	n = int( n )
@@ -21,11 +26,11 @@ def	make_odd( n ):
 
 if __name__ == '__main__':
 	me      = os.path.basename( sys.argv[0] )
-	prog    = os.path.splitext( me )[0]
-	version = '2.0.0'
-	parser  = argparse.ArgumentParser(
+	if me == '__init__':
+		me = 'yum-toc'
+	prog   = os.path.splitext( me )[0]
+	parser = argparse.ArgumentParser(
 		prog        = prog,
-		version     = version,
 		description = """Prints summary lines for all repo packages."""
 	)
 	NCOUNT=5
@@ -46,16 +51,28 @@ if __name__ == '__main__':
 		metavar = "FILE",
 		default = None
 	)
+	parser.add_argument(
+		'--version',
+		action = 'version',
+		version = Version,
+		help = '{0} Version {1}'.format(
+			prog,
+			Version
+		)
+	)
 	opts = parser.parse_args()
 	if opts.ofile:
 		try:
 			sys.stdout = open( opts.ofile, 'wt' )
-		except Exception, e:
-			print >>sys.stderr, "%s: cannot open '%s' for writing." % (
-				me,
-				opts.ofile
+		except:
+			print(
+				"%s: cannot open '%s' for writing." % (
+					me,
+					opts.ofile
+				),
+				file = sys.stderr
 			)
-			raise e
+			raise
 	#
 	sack = hawkey.Sack( make_cache_dir = True )
 	sack.enable_repo( '*' )
@@ -100,7 +117,7 @@ if __name__ == '__main__':
 				str( pkg.reponame ),
 				str( pkg.summary )
 			)
-			print line_fmt.format( line )
+			print( line_fmt.format( line ) )
 		exit( 1 )
 	#
 	if False:
@@ -117,18 +134,17 @@ if __name__ == '__main__':
 	):
 		if pkg.name != prev:
 			try:
-				summary = pkg.summary.decode(
-					'utf-8', 'replace'
-				).encode(
+				summary = pkg.summary.encode(
 					'ascii', 'replace'
-				)
+				).decode( 'utf-8')
 			except:
 				summary = '*** TBD ***'
+				raise
 			name = pkg.name
 			if is_odd( len(name) ):
 				name += ' '
 			if (lineno % opts.spacing) == 0:
-				padding = ' .' * (
+				padding = ' .' * int(
 					(max_name - len(name)) / 2
 				)
 				name += padding
@@ -137,6 +153,6 @@ if __name__ == '__main__':
 #				pkg.reponame,
 				summary,
 			)
-			print line_fmt.format( line )
+			print( line_fmt.format( line ) )
 			prev = pkg.name
 			lineno += 1
