@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # vim: sw=4 ts=4 noet
 
-import	hawkey
 import	argparse
+import	hawkey
 import	os
+import	socket
 import	sys
 
 try:
@@ -75,9 +76,11 @@ if __name__ == '__main__':
 		for host in [
 			os.getenv( 'HOST' ),
 			os.getenv( 'HOSTNAME' ),
+			socket.gethostname(),
 			'localhost',
 		]:
-			if host: break
+			if host and host != '':
+				break
 		opts.ofile = '-'.join([
 			opts.ofile if opts.ofile else 'all',
 			host
