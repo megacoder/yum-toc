@@ -36,13 +36,14 @@ if __name__ == '__main__':
 	NCOUNT=5
 	parser.add_argument(
 		'-n',
-		'--line-every',
+		'--every',
 		dest    = "spacing",
 		default = NCOUNT,
-		help    = 'write marker line every {0} lines'.format( NCOUNT ),
-		metavar = "COUNT",
+		help    = f'marker every N (default: {NCOUNT}) lines',
+		metavar = "N",
 		type    = int
 	)
+	#
 	parser.add_argument(
 		'-o',
 		'--out',
@@ -51,6 +52,14 @@ if __name__ == '__main__':
 		metavar = "FILE",
 		default = None
 	)
+	parser.add_argument(
+		'-s',
+		'--system',
+		dest   = 'with_hostname',
+		action = 'store_true',
+		help   = 'host-specific prefix',
+	)
+	#
 	parser.add_argument(
 		'--version',
 		action = 'version',
@@ -61,6 +70,18 @@ if __name__ == '__main__':
 		)
 	)
 	opts = parser.parse_args()
+	#
+	if opts.with_hostname:
+		for host in [
+			os.getenv( 'HOST' ),
+			os.getenv( 'HOSTNAME' ),
+			'localhost',
+		]:
+			if host: break
+		opts.ofile = '-'.join([
+			opts.ofile if opts.ofile else 'all',
+			host
+		])
 	if opts.ofile:
 		try:
 			sys.stdout = open( opts.ofile, 'wt' )
